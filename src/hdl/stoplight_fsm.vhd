@@ -12,7 +12,7 @@
 --|
 --| FILENAME      : stoplight_fsm.vhd
 --| AUTHOR(S)     : Capt Phillip Warner, Capt Dan Johnson
---| CREATED       : 02/22/2018, Last Modified 06/24/2020 by Capt Dan Johnson
+--| CREATED       : 02/22/2018, Last Modified 03/14/2023 by C3C Harris
 --| DESCRIPTION   : This module file implements solution for the HW stoplight example using 
 --|				  : direct hardware mapping (registers and CL) for BINARY encoding.
 --|               : Reset is asynchronous with a default state of yellow.
@@ -61,7 +61,7 @@ library ieee;
 
   
 entity stoplight_fsm is
-    Port ( i_C     : in  STD_LOGIC;
+    port ( i_C     : in  STD_LOGIC;
            i_reset : in  STD_LOGIC;
            i_clk   : in  STD_LOGIC;
            o_R     : out  STD_LOGIC;
@@ -70,26 +70,35 @@ entity stoplight_fsm is
 end stoplight_fsm;
 
 architecture stoplight_fsm_arch of stoplight_fsm is 
+
+    signal j_Q : std_logic_vector (1 downto 0) := "10";
+    signal j_Q_next : std_logic_vector (1 downto 0) := "10";
 	
 	-- create register signals with default state yellow (10)
-  
 begin
 	-- CONCURRENT STATEMENTS ----------------------------
 	-- Next state logic
-	
+	j_Q_next(0) <= not j_Q(1) and i_C;
+	j_Q_next(1) <= (not j_Q(1)) and (j_Q(0)) and (not i_C);
 	
 	-- Output logic
 	
-	-------------------------------------------------------	
+	o_G <= not j_Q(1) and j_Q(0);
+	o_Y <= j_Q(1) and not j_Q(0);
+	o_R <= (not j_Q(1) and not j_Q(0)) or (j_Q(1) and j_Q(0));
 	
 	-- PROCESSES ----------------------------------------	
 	-- state memory w/ asynchronous reset ---------------
-	register_proc : process (  )
-	begin
-			--Reset state is yellow
+    register_proc : process (i_clk, i_reset)
+    begin
 
-
-	end process register_proc;
+        if i_reset = '1' then
+            j_Q <= "10";        -- reset state is yellow
+        elsif (rising_edge(i_clk)) then
+            j_Q <= j_Q_next;    -- next state becomes current state
+        end if;
+        
+    end process register_proc;
 	-------------------------------------------------------
 	
 end stoplight_fsm_arch;
